@@ -64,14 +64,14 @@ npm login --scope=@XFY9326 --registry=https://npm.pkg.github.com
 
 Then ask your DSH agent to install the bundle:
 
-> Install `@xfy9326/dsh-bsk-daemon@1.0.0` from `https://npm.pkg.github.com` with `plugin_manager` `install_bundle`.
+> Install `@xfy9326/dsh-bsk-daemon` from `https://npm.pkg.github.com` with `plugin_manager` `install_bundle`.
 
 The tool records the dependency in the active profile, applies the bundle patch, and should report `application: applied`. You can also run it directly:
 
 ```json
 {
   "action": "install_bundle",
-  "target": "@xfy9326/dsh-bsk-daemon@1.0.0",
+  "target": "@xfy9326/dsh-bsk-daemon",
   "registry": "https://npm.pkg.github.com"
 }
 ```

@@ -29,7 +29,7 @@ README.zh.md       用户文档（中文）
    ```json
    {
      "action": "install_bundle",
-     "target": "@xfy9326/dsh-bsk-daemon@1.0.0",
+     "target": "@xfy9326/dsh-bsk-daemon",
      "registry": "https://npm.pkg.github.com"
    }
    ```

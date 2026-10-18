@@ -64,14 +64,14 @@ npm login --scope=@XFY9326 --registry=https://npm.pkg.github.com
 
 然后让 DSH Agent 安装该 bundle：
 
-> 用 `plugin_manager` 的 `install_bundle`，从 `https://npm.pkg.github.com` 安装 `@xfy9326/dsh-bsk-daemon@1.0.0`。
+> 用 `plugin_manager` 的 `install_bundle`，从 `https://npm.pkg.github.com` 安装 `@xfy9326/dsh-bsk-daemon`。
 
 工具会把依赖写入当前 profile、应用 bundle patch，并应返回 `application: applied`。也可以直接调用：
 
 ```json
 {
   "action": "install_bundle",
-  "target": "@xfy9326/dsh-bsk-daemon@1.0.0",
+  "target": "@xfy9326/dsh-bsk-daemon",
   "registry": "https://npm.pkg.github.com"
 }
 ```
