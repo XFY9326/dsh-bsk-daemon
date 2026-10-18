@@ -74,7 +74,7 @@ README.zh.md       用户文档（中文）
 - 提交前运行测试：
 
   ```bash
-  node --test test/
+  node --test
   ```
 
 - 测试必须保持隔离：使用临时 `BSK_HOME` 和故意不存在的 `bskPath`，因此不会启动或停止真实 daemon。
@@ -85,7 +85,7 @@ README.zh.md       用户文档（中文）
 
 ```powershell
 # 1. 单元测试
-node --test test/
+node --test
 
 # 2. 安装/刷新 bundle 后检查 daemon
 bsk status --json
@@ -108,7 +108,7 @@ bsk status --json
 
 1. 修改 `package.json` 的 `version`（工作流只发布这个版本；重复发布同版本会失败）。
 2. 行为、配置或支持版本有变化时同步更新 `README.md` / `README.zh.md` / `AGENTS`。
-3. 本地运行 `node --test test/` 与 `npm pack --dry-run`。
+3. 本地运行 `node --test` 与 `npm pack --dry-run`。
 4. 提交、打 tag `v<version>`，推送提交与标签。
 5. 用 `gh run list --workflow publish.yml` 确认；检查包页面与 Release 资产。流水线未变绿前不要宣布成功。
 

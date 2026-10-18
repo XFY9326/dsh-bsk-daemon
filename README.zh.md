@@ -194,7 +194,7 @@ DSH 宿主进程
 ## 开发
 
 ```powershell
-node --test test/     # 零依赖测试（node:test）
+node --test     # 零依赖测试（node:test）
 npm pack --dry-run    # 查看实际发布文件
 ```
 

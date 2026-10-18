@@ -24,6 +24,6 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - name: Run the test suite
-        run: node --test test/
+        run: node --test
       - name: Inspect the published file set
         run: npm pack --dry-run

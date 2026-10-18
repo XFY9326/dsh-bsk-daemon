@@ -22,7 +22,7 @@ jobs:
           node-version: 22
           registry-url: https://npm.pkg.github.com
       - name: Run the test suite
-        run: node --test test/
+        run: node --test
       - name: Publish to GitHub Packages
         run: npm publish
         env:

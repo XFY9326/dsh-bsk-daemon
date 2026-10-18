@@ -76,7 +76,7 @@ Keep that property: no `process.platform` branching unless a platform genuinely 
 - Run the test suite before committing:
 
   ```bash
-  node --test test/
+  node --test
   ```
 
 - The suite must stay hermetic: it uses a temporary `BSK_HOME` and a deliberately missing `bskPath`, so it never starts or stops a real daemon.
@@ -87,7 +87,7 @@ After a change that can affect lifecycle:
 
 ```powershell
 # 1. unit tests
-node --test test/
+node --test
 
 # 2. install/refresh the bundle, then check the daemon
 bsk status --json
@@ -110,7 +110,7 @@ Record in the change description what you actually observed, not what should hav
 
 1. Bump `version` in `package.json` (the workflow publishes exactly that version; re-publishing an existing version fails).
 2. Update README/README.zh/AGENTS if behaviour, configuration or supported versions changed.
-3. Run `node --test test/` and `npm pack --dry-run` locally.
+3. Run `node --test` and `npm pack --dry-run` locally.
 4. Commit, tag `v<version>`, push the commit and the tag.
 5. Confirm with `gh run list --workflow publish.yml`; check the package page and the release assets. Do not report success before the run is green.
 

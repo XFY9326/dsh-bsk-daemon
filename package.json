@@ -37,8 +37,8 @@
   },
   "files": ["index.js", "cordis.patch.yml", "locale/*.json", "icon.svg"],
   "scripts": {
-    "test": "node --test test/",
-    "prepublishOnly": "node --test test/"
+    "test": "node --test",
+    "prepublishOnly": "node --test"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com",

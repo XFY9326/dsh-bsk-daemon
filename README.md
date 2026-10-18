@@ -194,7 +194,7 @@ Ask your DSH agent to remove the bundle (`plugin_manager` `remove_bundle`, targe
 ## Development
 
 ```powershell
-node --test test/     # zero-dependency test suite (node:test)
+node --test     # zero-dependency test suite (node:test)
 npm pack --dry-run    # inspect the published file set
 ```
 
