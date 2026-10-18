@@ -7,6 +7,8 @@ English version: [AGENTS.md](AGENTS.md)。
 
 一个单文件的 DeepSeek Harness **bundle**（`dsh-bsk-daemon`），把 BrowserSkill 的 `bsk` 桥接 daemon 作为 DSH 宿主进程的子进程运行。没有构建步骤、没有运行时依赖：`index.js` 由 Cordis loader 直接加载。
 
+它托管的是上游 [Tencent/BrowserSkill](https://github.com/Tencent/BrowserSkill) 提供的 daemon；本项目不修改、不内嵌该上游代码，CLI/daemon/扩展的行为以上游文档为准。
+
 ```
 index.js           插件（导出 name、inject、Config、apply）
 cordis.patch.yml   bundle patch：插入行 id "bsk-daemon"

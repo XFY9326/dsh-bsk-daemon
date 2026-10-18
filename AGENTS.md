@@ -7,6 +7,8 @@ Instructions for AI coding agents and for DSH agents that *use* this bundle.
 
 A single-file DeepSeek Harness **bundle** (`dsh-bsk-daemon`) that runs the BrowserSkill `bsk` bridge daemon as a child of the DSH host process. There is no build step and no runtime dependency: `index.js` is loaded directly by the Cordis loader.
 
+It supervises the daemon shipped by the upstream [Tencent/BrowserSkill](https://github.com/Tencent/BrowserSkill) project. That project is not modified or vendored here; its documentation is the reference for CLI, daemon and extension behavior.
+
 ```
 index.js            plugin (exports name, inject, Config, apply)
 cordis.patch.yml    bundle patch: inserts row id "bsk-daemon"

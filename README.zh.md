@@ -5,6 +5,8 @@
 
 一个 DeepSeek Harness（DSH）bundle，让 **BrowserSkill 的 `bsk` 桥接守护进程**拥有与 DSH 相同的生命周期：随 DSH 启动、随 DSH 退出、崩溃后有限次自动重启，并且绝不会误碰别人启动的 daemon。
 
+本项目是上游 **[Tencent/BrowserSkill](https://github.com/Tencent/BrowserSkill)** 的社区配套项目 —— 见[致谢](#致谢)。
+
 支持 **Windows / macOS / Linux**，见[平台支持](#平台支持)。
 
 [English](README.md) · [中文 Agent 说明](AGENTS.zh.md) · [Agent instructions](AGENTS.md)
@@ -200,9 +202,11 @@ npm pack --dry-run    # 查看实际发布文件
 
 CI：[`.github/workflows/test.yml`](.github/workflows/test.yml) 在 Ubuntu、macOS、Windows 上以 Node 22 与 24 运行测试。推送 `v*` 标签会触发 [`.github/workflows/publish.yml`](.github/workflows/publish.yml)：先测试，再发布到 GitHub Packages，并用打包的 tarball 创建 GitHub Release。
 
-## 关键词
+## 致谢
 
-`dsh`、`deepseek-harness`、`cordis`、`bundle`、`browserskill`、`bsk`、`daemon`、`browser-automation`、`windows`、`macos`、`linux`、`cross-platform`
+本 bundle 是 [Tencent/BrowserSkill](https://github.com/Tencent/BrowserSkill) 的社区配套项目。上游提供 `bsk` CLI、daemon、浏览器扩展与 DSH 的 `bsk_*` 工具；感谢 BrowserSkill 的作者与贡献者，尤其是其沙箱 agent 文档，直接启发了本 supervisor 的设计。
+
+本项目不修改、不重分发 BrowserSkill，请按其自身许可证安装使用；本仓库与腾讯无隶属关系，也未获官方背书。
 
 ## 许可证
 

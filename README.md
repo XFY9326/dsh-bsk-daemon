@@ -5,6 +5,8 @@
 
 A DeepSeek Harness (DSH) bundle that gives the **BrowserSkill `bsk` bridge daemon** the same lifecycle as DSH: it starts with DSH, is stopped when DSH exits, is restarted after a crash (bounded), and is never confused with a daemon somebody else started.
 
+This is a community companion to the upstream **[Tencent/BrowserSkill](https://github.com/Tencent/BrowserSkill)** project — see [Acknowledgements](#acknowledgements).
+
 Runs on **Windows, macOS and Linux** — see [Platform support](#platform-support).
 
 [中文说明](README.zh.md) · [Agent instructions](AGENTS.md) · [中文 Agent 说明](AGENTS.zh.md)
@@ -200,9 +202,11 @@ npm pack --dry-run    # inspect the published file set
 
 CI: [`.github/workflows/test.yml`](.github/workflows/test.yml) runs the suite on Ubuntu, macOS and Windows for Node 22 and 24. Pushing a `v*` tag runs [`.github/workflows/publish.yml`](.github/workflows/publish.yml), which tests, publishes to GitHub Packages and creates a GitHub Release with the packed tarball.
 
-## Keywords
+## Acknowledgements
 
-`dsh`, `deepseek-harness`, `cordis`, `bundle`, `browserskill`, `bsk`, `daemon`, `browser-automation`, `windows`, `macos`, `linux`, `cross-platform`
+This bundle is a community add-on built on top of [Tencent/BrowserSkill](https://github.com/Tencent/BrowserSkill), the upstream project that provides the `bsk` CLI, daemon, browser extension and the DSH `bsk_*` tools. Thanks to its authors and contributors for the daemon design and documentation — in particular the sandboxed-agent guide that shaped this supervisor.
+
+BrowserSkill is not modified or redistributed here; install and use it under its own license. This repository is not affiliated with or endorsed by Tencent.
 
 ## License
 

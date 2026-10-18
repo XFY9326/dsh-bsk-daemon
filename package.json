@@ -1,6 +1,6 @@
 {
   "name": "@xfy9326/dsh-bsk-daemon",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "description": "DSH bundle that supervises the BrowserSkill (bsk) bridge daemon as a host child process: start with DSH, stop with DSH, bounded crash restarts. Windows, macOS and Linux.",
   "keywords": [
