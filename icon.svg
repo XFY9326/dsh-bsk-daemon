@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="bsk daemon supervisor">
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="#e8f2fb"/>
+  <rect x="13" y="15" width="38" height="27" rx="5" fill="#247bbf"/>
+  <path d="M13 22a5 5 0 0 1 5-5h28a5 5 0 0 1 5 5v2H13z" fill="#175f95"/>
+  <circle cx="19" cy="20" r="1.7" fill="#e8f2fb"/>
+  <circle cx="24.5" cy="20" r="1.7" fill="#e8f2fb"/>
+  <circle cx="30" cy="20" r="1.7" fill="#e8f2fb"/>
+  <path d="M32 42v6" stroke="#175f95" stroke-width="3.4" stroke-linecap="round"/>
+  <path d="M25 48h14" stroke="#175f95" stroke-width="3.4" stroke-linecap="round"/>
+</svg>

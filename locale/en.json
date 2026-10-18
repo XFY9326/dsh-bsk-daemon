@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "bsk Daemon Supervisor",
+    "description": "Starts the BrowserSkill bsk bridge daemon with DSH, stops it when DSH exits, and restarts it after a crash."
+  }
+}

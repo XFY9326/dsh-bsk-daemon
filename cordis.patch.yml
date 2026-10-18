@@ -1,0 +1,26 @@
+# Supervise the BrowserSkill (bsk) bridge daemon from the DSH host process.
+#
+# The daemon cannot be started from inside the DSH tool sandbox on Windows
+# (job-object breakaway is refused, `~/.bsk` is read-only there, and the IPC
+# named pipe is blocked), so this bundle runs `bsk daemon start --foreground`
+# as a host child process and stops it with the host.
+#
+# Defaults used when `config` is omitted:
+#   bskPath: "bsk" (resolved through PATH)
+#   bskHome: "~/.bsk" (or $BSK_HOME)
+#   args:    daemon start --foreground --daemon-idle 30d
+#
+# To customize, uncomment and edit `config`. Row config is replaced wholesale,
+# so restate every field you need.
+- insert:
+    - id: bsk-daemon
+      name: 'dsh-bsk-daemon'
+      # config:
+      #   bskPath: 'C:\Users\me\.local\bin\bsk.exe'
+      #   bskHome: 'C:\Users\me\.bsk'
+      #   args:
+      #     - daemon
+      #     - start
+      #     - --foreground
+      #     - --daemon-idle
+      #     - 30d

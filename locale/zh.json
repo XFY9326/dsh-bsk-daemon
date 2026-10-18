@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "bsk 守护进程托管",
+    "description": "随 DSH 启动并停止 BrowserSkill 的 bsk 桥接守护进程，异常退出时自动重启。"
+  }
+}
