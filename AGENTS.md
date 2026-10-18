@@ -21,14 +21,26 @@ README.zh.md        user documentation (Chinese)
 
 ## For a DSH agent: install and use it
 
-1. The user has this repository checked out at an absolute path, for example `C:\Tools\dsh-bsk-daemon`.
-2. Install it with the `plugin_manager` tool:
+1. The bundle is published to GitHub Packages as `@xfy9326/dsh-bsk-daemon`, or available from a local checkout.
+2. Install it with the `plugin_manager` tool.
+
+   From the registry (the machine must have a `read:packages` token configured for `npm.pkg.github.com`):
+
+   ```json
+   {
+     "action": "install_bundle",
+     "target": "@xfy9326/dsh-bsk-daemon@1.0.0",
+     "registry": "https://npm.pkg.github.com"
+   }
+   ```
+
+   From a checkout at an absolute path:
 
    ```json
    { "action": "install_bundle", "target": "C:\\Tools\\dsh-bsk-daemon" }
    ```
 
-   This writes a `link:` dependency into the active profile and applies the bundle patch. Treat `application: applied` as the success signal; `restart-required` means the row is not live yet.
+   This writes the dependency into the active profile and applies the bundle patch. Treat `application: applied` as the success signal; `restart-required` means the row is not live yet. Plain `pnpm add` / `dsh plugin add` only adds the dependency and does not enable the bundle layer.
 
 3. Verify with `bsk status --json` and `Get-Process bsk` (or your platform's equivalent). The daemon must be a child of the DSH host and serve the loopback port recorded in `~/.bsk/daemon.json`.
 4. Do **not** try to start the daemon from a sandboxed shell. The whole point of the bundle is that a sandboxed child cannot start it. If the daemon is missing, toggle or reinstall the bundle, or restart DSH — do not run `bsk daemon start` inside a tool sandbox and do not delete `~/.bsk` runtime files.
@@ -45,6 +57,17 @@ Changes must keep all of these true. They are the reason the plugin exists and t
 6. **Config stays tiny and validated.** Three fields (`bskPath`, `bskHome`, `args`), validated by the exported standard schema. Update the schema, the defaults and this repo's `cordis.patch.yml` comment together.
 7. **No machine-specific state in the repo.** No absolute user paths, no secrets, no `daemon.json` copies. Portability belongs in documented examples.
 8. **Do not add runtime dependencies or build steps.** The bundle must load as plain ESM from a profile `link:` dependency.
+
+## Platform perspective
+
+The plugin is written against Node.js built-ins only, so it runs on Windows, macOS and Linux without platform branches:
+
+- `daemon.json` is keyed by `sock_path` on every platform: a Windows named pipe or a Unix domain socket. `net.connect()` handles both.
+- `bsk daemon stop` and the signal fallback are cross-platform.
+- The Windows job object reaps the daemon when DSH dies; macOS/Linux have no equivalent, so a hard-killed DSH can leave an orphan daemon that the next start reuses.
+- `windowsHide` is ignored outside Windows.
+
+Keep that property: no `process.platform` branching unless a platform genuinely behaves differently, and no shell-specific command construction.
 
 ## Development workflow
 
@@ -83,10 +106,19 @@ Record in the change description what you actually observed, not what should hav
 
 ## Release
 
-1. Bump `version` in `package.json`.
-2. Update README/README.zh if behaviour or configuration changed.
-3. Run `node --test test/`.
-4. Commit, then tag `v<version>` and push the tag.
+`.github/workflows/publish.yml` publishes on a `v*` tag. The workflow tests, publishes `@xfy9326/dsh-bsk-daemon` to GitHub Packages with the repository `GITHUB_TOKEN` (`packages: write`), packs the tarball and creates a GitHub Release.
+
+1. Bump `version` in `package.json` (the workflow publishes exactly that version; re-publishing an existing version fails).
+2. Update README/README.zh/AGENTS if behaviour, configuration or supported versions changed.
+3. Run `node --test test/` and `npm pack --dry-run` locally.
+4. Commit, tag `v<version>`, push the commit and the tag.
+5. Confirm with `gh run list --workflow publish.yml`; check the package page and the release assets. Do not report success before the run is green.
+
+Repository settings are intentionally minimal: Actions use only the default token, no secrets are stored.
+
+## Supported versions
+
+`package.json` does not declare DSH as a dependency — DSH loads the bundle. Keep the compatibility table in both READMEs accurate when testing a new DSH, Cordis or bsk release: it currently records DSH `0.2.1-rc.2`, Cordis `4.0.5`, bsk `0.3.3` and Node `>=22`.
 
 ## License
 

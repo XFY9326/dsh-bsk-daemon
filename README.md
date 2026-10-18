@@ -1,117 +1,152 @@
 # dsh-bsk-daemon
 
-A DeepSeek Harness (DSH) bundle that gives the **BrowserSkill `bsk` bridge daemon** the same lifecycle as DSH on Windows: it starts with DSH, is stopped when DSH exits, is restarted after a crash (bounded), and is never confused with a daemon somebody else started.
+[![test](https://github.com/XFY9326/dsh-bsk-daemon/actions/workflows/test.yml/badge.svg)](https://github.com/XFY9326/dsh-bsk-daemon/actions/workflows/test.yml)
+[![package](https://img.shields.io/badge/package-GitHub%20Packages-2ea44f?logo=github)](https://github.com/XFY9326/dsh-bsk-daemon/pkgs/npm/dsh-bsk-daemon)
+
+A DeepSeek Harness (DSH) bundle that gives the **BrowserSkill `bsk` bridge daemon** the same lifecycle as DSH: it starts with DSH, is stopped when DSH exits, is restarted after a crash (bounded), and is never confused with a daemon somebody else started.
+
+Runs on **Windows, macOS and Linux** — see [Platform support](#platform-support).
 
 [中文说明](README.zh.md) · [Agent instructions](AGENTS.md) · [中文 Agent 说明](AGENTS.zh.md)
 
 ---
 
-## The problem it solves
+## Why this exists
 
-BrowserSkill exposes browser automation to DSH through `bsk_*` tools backed by a local `bsk` daemon. On Windows, that daemon **cannot be started from inside DSH's tool sandbox**:
+BrowserSkill exposes browser automation to DSH through `bsk_*` tools backed by a local `bsk` daemon. Some agent hosts run shell commands in a sandbox that **reaps or forbids the daemon**. The concrete Windows case:
 
-- the sandboxed child cannot break away from the Windows job object,
+- a sandboxed child cannot break away from the Windows job object,
 - it cannot write `~/.bsk`,
-- it cannot open the daemon's IPC named pipe.
+- it cannot open the daemon's IPC endpoint.
 
-So the daemon has to be started by an unsandboxed process. Without this bundle the usual workaround is a separate console running `bsk daemon start --foreground` that the user must keep open, or a scheduled task that outlives DSH.
+Linux agents hit the equivalent problem with `bubblewrap`-style sandboxes that kill command children. The documented workaround is to keep the daemon in a persistent host context and use local IPC from the sandbox — which is exactly what a supervisor in the DSH host process provides.
 
-This bundle moves that responsibility into the DSH host process itself: the daemon becomes a DSH child with a DSH lifetime.
+This bundle moves that responsibility into DSH itself: the daemon becomes a DSH child with a DSH lifetime.
 
-## What it does
+## Platform support
 
-| Behaviour | Detail |
-| --- | --- |
-| Start | On plugin load, spawns `bsk daemon start --foreground --daemon-idle 30d` (configurable) as a host child process |
-| Stop | On plugin unload / DSH exit, asks the daemon to stop with `bsk daemon stop`, then waits, then kills |
-| Ownership | Only signals a child it spawned: the CLI stop path is used only when `daemon.json` records this child's pid |
-| Existing daemons | If a reachable daemon already serves the same `BSK_HOME`, it is left untouched |
-| Crash handling | Restarts after 2 s, at most 5 attempts in a row; the budget resets once the daemon has stayed up for 60 s |
-| Config | Validated by a small standard-schema validators; unknown keys and malformed values fail the plugin load with a clear message |
-| Boot safety | A broken daemon never prevents DSH from booting — errors are logged and the plugin stays inert |
+| Platform | Status | Notes |
+| --- | --- | --- |
+| Windows 10/11 x64 | **Verified end to end** | Daemon started, stopped, restarted through the plugin in real use; job object also reaps it if DSH dies. |
+| macOS (Apple Silicon / Intel) | Supported, not yet run on real hardware | Same code path; IPC is a Unix domain socket, `bsk daemon stop` and signal handling are cross-platform. |
+| Linux x64 / ARM64 | Supported, not yet run on real hardware | Same as macOS; the `bubblewrap` sandbox case is the closest analogue to Windows. |
+| Node.js 22+ | CI matrix | The test suite runs on `ubuntu-latest`, `macos-latest`, `windows-latest` for Node 22 and 24. |
 
-## Requirements
+Confirmed by the test matrix: module load, config validation, effect registration order and awaitable disposal on all three operating systems. A real `bsk` daemon is only exercised on Windows so far; a Unix run needs a machine with the CLI and the browser extension.
 
-- Windows 10/11
-- DeepSeek Harness with profile bundles (tested with `@deepseek-ai/dsh` **0.2.1-rc.2**)
-- [BrowserSkill](https://github.com/Tencent/BrowserSkill) extension and the `bsk` CLI (tested with **0.3.3**)
-- The `bsk` executable available on `PATH`, or its absolute path set in the row config
-- An active DSH profile (a `link:` dependency is written into that profile)
+## Compatibility
+
+| Component | Supported | Tested with |
+| --- | --- | --- |
+| DeepSeek Harness | `0.2.x` profiles with bundle support | `0.2.1-rc.2` |
+| Cordis plugin API | 4.x (`ctx.effect`, standard-schema `Config`) | `4.0.5` |
+| BrowserSkill `bsk` | 0.3.x | `0.3.3` |
+| Node.js | `>=22` | 22, 24 (CI), 26 (local) |
+
+Older DSH releases that do not support profile bundles cannot load this package; use the [local checkout install](#from-a-local-checkout) only if your DSH supports `plugin_manager install_bundle`.
 
 ## Installation
 
-1. Clone this repository somewhere stable (the DSH profile links to this directory):
+### From GitHub Packages
 
-   ```powershell
-   git clone https://github.com/XFY9326/dsh-bsk-daemon.git C:\Tools\dsh-bsk-daemon
-   ```
+The package is published to GitHub Packages as `@xfy9326/dsh-bsk-daemon`. GitHub requires authentication even to read public packages, so first make a token with `read:packages` available to npm:
 
-2. Ask your DSH agent to install the bundle by absolute path, using the built-in `plugin_manager` tool:
+```powershell
+npm config set @xfy9326:registry https://npm.pkg.github.com
+npm config set //npm.pkg.github.com/:_authToken $env:GITHUB_TOKEN
+```
 
-   > Install the bundle at `C:\Tools\dsh-bsk-daemon` with `plugin_manager` `install_bundle`.
+or interactively:
 
-   The tool adds a `link:` dependency to the active profile, applies the bundle patch, and should report `application: applied`. The bundle is a bundle, so it is **not** pruned by later pnpm installs.
+```powershell
+npm login --scope=@XFY9326 --registry=https://npm.pkg.github.com
+```
 
-3. Verify:
+Then ask your DSH agent to install the bundle:
 
-   ```powershell
-   bsk status --json
-   Get-Process bsk
-   ```
+> Install `@xfy9326/dsh-bsk-daemon@1.0.0` from `https://npm.pkg.github.com` with `plugin_manager` `install_bundle`.
 
-   `bsk status --json` should report a live daemon (pid, `ws_port`, connected browsers). The plugin row is visible in DSH Settings → Plugins as **bsk Daemon Supervisor** / **bsk 守护进程托管**.
+The tool records the dependency in the active profile, applies the bundle patch, and should report `application: applied`. You can also run it directly:
 
-A DSH restart is normally not required (the new bundle is applied through HMR), but restart if the row does not appear.
+```json
+{
+  "action": "install_bundle",
+  "target": "@xfy9326/dsh-bsk-daemon@1.0.0",
+  "registry": "https://npm.pkg.github.com"
+}
+```
 
-### Manual install without the agent tool
+Do not install it with plain `pnpm add` / `dsh plugin add` alone: those only add the dependency, they do not enable the bundle layer.
 
-`plugin_manager` is the supported path because it writes the profile dependency and lockfile for you. If you must do it by hand, the equivalent state is a `link:` dependency in the active profile's `package.json` plus a `bsk-daemon` row from this bundle's `cordis.patch.yml`; hand-editing profile files is easy to get wrong, so prefer the tool.
+### From a local checkout
+
+```powershell
+git clone https://github.com/XFY9326/dsh-bsk-daemon.git C:\Tools\dsh-bsk-daemon
+```
+
+Then ask your DSH agent to install the bundle at that absolute path with `plugin_manager` `install_bundle`. The profile gets a `link:` dependency, so the checkout must not be moved afterwards.
+
+### After install
+
+```powershell
+bsk status --json
+```
+
+The daemon should be reported as a child of the DSH host process. The plugin row appears in DSH Settings → Plugins as **bsk Daemon Supervisor** / **bsk 守护进程托管**.
+
+A DSH restart is normally not required (the bundle is applied through HMR), but restart if the row does not appear.
 
 ## Configuration
 
-The bundle inserts one row:
-
-```yaml
-- id: bsk-daemon
-  name: 'dsh-bsk-daemon'
-```
-
-With no `config`, the defaults are:
+The bundle inserts one row with no `config`; the defaults are:
 
 | Key | Default | Meaning |
 | --- | --- | --- |
 | `bskPath` | `bsk` | Executable name on `PATH`, or an absolute path |
-| `bskHome` | `$BSK_HOME` or `~/.bsk` | Where `daemon.json`, the IPC pipe and logs live |
+| `bskHome` | `$BSK_HOME` or `~/.bsk` | Where `daemon.json`, the IPC endpoint and logs live |
 | `args` | `daemon start --foreground --daemon-idle 30d` | Arguments passed to `bskPath` |
 
-To override, edit this bundle's [`cordis.patch.yml`](cordis.patch.yml) **before installing**:
+To override, edit this bundle's [`cordis.patch.yml`](cordis.patch.yml) before installing:
 
 ```yaml
 - insert:
     - id: bsk-daemon
-      name: 'dsh-bsk-daemon'
+      name: '@xfy9326/dsh-bsk-daemon'
       config:
         bskPath: 'C:\Tools\bsk\bsk.exe'
         bskHome: 'C:\Users\me\.bsk'
         args: [daemon, start, --foreground, --daemon-idle, 30d]
 ```
 
-Row config is **replaced wholesale**, so restate every field you need. If the daemon should never be started by DSH (for example you run a shared daemon yourself), disable the row instead of pointing it elsewhere.
+Row config is **replaced wholesale**. If the daemon should never be started by DSH (for example you run a shared daemon yourself), disable the row instead.
+
+## Cross-platform behaviour
+
+The plugin only uses Node.js built-ins (`child_process`, `net`, `fs`, `os`, `path`), so no platform branching is needed in the code:
+
+- **Probing** reads `daemon.json` and connects to `sock_path`. On Windows that is a named pipe (`\\.\pipe\bsk-daemon-*`); on macOS/Linux it is a Unix domain socket (`~/.bsk/run/daemon.sock`). `net.connect()` handles both.
+- **Stopping** uses the same CLI on every platform (`bsk daemon stop`), only when `daemon.json`'s `pid` is this plugin's own child, then falls back to a signal.
+- **Lifecycle difference:** Windows job objects also reap the daemon if DSH is killed hard. On macOS/Linux there is no such mechanism, so a hard-killed DSH leaves the daemon running; the next DSH start probes it and reuses it instead of starting a second one. A normal DSH exit stops it through the plugin either way.
+- `windowsHide` is a Windows-only spawn option; it is ignored elsewhere.
 
 ## Verification
 
 ```powershell
-# 1. Is the daemon up and serving?
+# Is the daemon up and serving?
 bsk status --json
 
-# 2. Is it a child of the DSH host process?
+# Is it a child of the DSH host process? (Windows)
 Get-CimInstance Win32_Process -Filter "Name='bsk.exe'" | Select-Object ProcessId, ParentProcessId, CommandLine
 
-# 3. Daemon log (written by bsk itself)
-Get-Content "$env:USERPROFILE\.bsk\daemon.log.*" -Tail 20
+# The same on macOS/Linux
+pgrep -fl 'bsk daemon start --foreground'
+
+# Daemon log, written by bsk itself
+Get-Content "$env:USERPROFILE\.bsk\daemon.log.*" -Tail 20   # Windows
+tail -n 20 ~/.bsk/daemon.log.*                            # macOS/Linux
 ```
 
-Expected: one `bsk.exe` whose parent is the DSH process, a listening loopback port (default `52800`), and `daemon.json` containing `sock_path` plus `host_managed: true`.
+Expected: one daemon process whose parent is the DSH process, a listening loopback port (default `52800`), and `daemon.json` containing `sock_path` plus `host_managed: true`.
 
 To exercise the lifecycle end to end:
 
@@ -126,10 +161,10 @@ bsk status --json
 
 ```
 DSH host process
-└── plugin row: bsk-daemon (dsh-bsk-daemon)
-    └── bsk.exe daemon start --foreground --daemon-idle 30d
+└── plugin row: bsk-daemon (@xfy9326/dsh-bsk-daemon)
+    └── bsk daemon start --foreground --daemon-idle 30d
         ├── ~/.bsk/daemon.json      (pid, sock_path, ws_port)
-        ├── \\.\pipe\bsk-daemon-*   (IPC)
+        ├── IPC endpoint            (named pipe / Unix socket)
         └── ws://127.0.0.1:52800    (browser extension)
 ```
 
@@ -141,32 +176,33 @@ Startup probes `daemon.json` and connects to `sock_path` before spawning anythin
 | --- | --- |
 | `bsk_*` tools still report no daemon | Is the `bsk-daemon` row enabled? Run `bsk status --json`; inspect the DSH log for `[bsk-daemon]` lines |
 | Daemon exits immediately | Run the configured command manually (`bsk daemon start --foreground`) to see the error; check `bskPath` |
+| Install fails with 401/403 from `npm.pkg.github.com` | Your npm token is missing or lacks `read:packages`; redo the auth step |
 | Two daemons appear | Only the plugin's own child is managed. A foreign daemon is deliberately left alone; stop it yourself if it is stale |
-| Plugin vanished after installing another plugin | Should not happen with a `link:` bundle dependency. If the checkout moved, reinstall the bundle |
-| Restart loop, then silence | The plugin gives up after 5 consecutive failures; fix the underlying error and restart DSH (or toggle the bundle) |
 | `bsk status` works but `bsk_*` tools fail | Restart DSH so the browser-skill plugin reconnects to the managed daemon |
+| Restart loop, then silence | The plugin gives up after 5 consecutive failures; fix the underlying error and restart DSH (or toggle the bundle) |
 
 ## Uninstall
 
-Ask your DSH agent to remove the bundle (`plugin_manager` `remove_bundle`, target `dsh-bsk-daemon`), or disable it to stop the daemon while keeping the files. Removing the profile dependency by hand leaves the patch row behind.
+Ask your DSH agent to remove the bundle (`plugin_manager` `remove_bundle`, target `@xfy9326/dsh-bsk-daemon`), or disable it to stop the daemon while keeping the files.
 
 ## Security notes
 
 - The bundle only spawns the `bsk` binary you configure; no downloads, no install scripts.
-- It opens no new network listeners; the daemon's loopback port and IPC pipe belong to BrowserSkill.
+- It opens no new network listeners; the daemon's loopback port and IPC endpoint belong to BrowserSkill.
 - No credentials are read or stored. The config schema is limited to three plain fields.
 
 ## Development
 
 ```powershell
 node --test test/     # zero-dependency test suite (node:test)
+npm pack --dry-run    # inspect the published file set
 ```
 
-There is no build step: `index.js` is shipped as-is.
+CI: [`.github/workflows/test.yml`](.github/workflows/test.yml) runs the suite on Ubuntu, macOS and Windows for Node 22 and 24. Pushing a `v*` tag runs [`.github/workflows/publish.yml`](.github/workflows/publish.yml), which tests, publishes to GitHub Packages and creates a GitHub Release with the packed tarball.
 
 ## Keywords
 
-`dsh`, `deepseek-harness`, `cordis`, `bundle`, `browserskill`, `bsk`, `daemon`, `browser-automation`, `windows`
+`dsh`, `deepseek-harness`, `cordis`, `bundle`, `browserskill`, `bsk`, `daemon`, `browser-automation`, `windows`, `macos`, `linux`, `cross-platform`
 
 ## License
 

@@ -1,0 +1,38 @@
+name: publish
+
+# Publishes @xfy9326/dsh-bsk-daemon to GitHub Packages and creates a GitHub
+# Release whenever a v* tag is pushed. The default repository token is enough:
+# `packages: write` covers the npm registry, `contents: write` covers the release.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://npm.pkg.github.com
+      - name: Run the test suite
+        run: node --test test/
+      - name: Publish to GitHub Packages
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pack the release tarball
+        run: npm pack
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" ./*.tgz \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes

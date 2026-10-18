@@ -21,14 +21,26 @@ README.zh.md       用户文档（中文）
 
 ## 给 DSH Agent：安装与使用
 
-1. 用户已把本仓库检出到某个绝对路径，例如 `C:\Tools\dsh-bsk-daemon`。
-2. 用 `plugin_manager` 工具安装：
+1. bundle 已发布到 GitHub Packages：`@xfy9326/dsh-bsk-daemon`，也可从本地检出目录安装。
+2. 用 `plugin_manager` 工具安装。
+
+   从 registry 安装（机器上需为 `npm.pkg.github.com` 配置有 `read:packages` 权限的 token）：
+
+   ```json
+   {
+     "action": "install_bundle",
+     "target": "@xfy9326/dsh-bsk-daemon@1.0.0",
+     "registry": "https://npm.pkg.github.com"
+   }
+   ```
+
+   从绝对路径的本地检出安装：
 
    ```json
    { "action": "install_bundle", "target": "C:\\Tools\\dsh-bsk-daemon" }
    ```
 
-   该调用会向当前 profile 写入 `link:` 依赖并应用 bundle patch。以 `application: applied` 作为成功依据；返回 `restart-required` 说明插件行尚未生效。
+   该调用会向当前 profile 写入依赖并应用 bundle patch。以 `application: applied` 作为成功依据；返回 `restart-required` 说明插件行尚未生效。单独使用 `pnpm add` / `dsh plugin add` 只会加依赖，不会启用 bundle 层。
 
 3. 用 `bsk status --json` 和 `Get-Process bsk`（或平台等价命令）验证：daemon 必须是 DSH 宿主的子进程，并服务于 `~/.bsk/daemon.json` 中记录的回环端口。
 4. **不要**在沙箱 shell 里尝试启动 daemon。本 bundle 存在的意义正是：沙箱子进程启动不了它。若 daemon 缺失，应重启/重新安装 bundle 或重启 DSH——不要在工具沙箱内执行 `bsk daemon start`，也不要删除 `~/.bsk` 下的运行时文件。
@@ -43,6 +55,17 @@ README.zh.md       用户文档（中文）
 6. **配置保持极简且有校验。** 只有三个字段（`bskPath`、`bskHome`、`args`），由导出的标准 schema 校验；修改 schema 时同步更新默认值与仓库内 `cordis.patch.yml` 的注释。
 7. **仓库内不放机器特定信息。** 不放绝对用户路径、不放密钥、不放 `daemon.json` 副本；可移植性放在文档示例里。
 8. **不要引入运行时依赖或构建步骤。** bundle 必须能作为 profile 的 `link:` 依赖以纯 ESM 直接加载。
+
+## 平台视角
+
+插件只依赖 Node.js 内建模块，因此在 Windows、macOS、Linux 上无需平台分支即可运行：
+
+- `daemon.json` 在三个平台都以 `sock_path` 为键：Windows 命名管道或 Unix domain socket，`net.connect()` 两者都支持。
+- `bsk daemon stop` 与信号回退都跨平台。
+- Windows 的 job object 会在 DSH 退出时兜底结束 daemon；macOS/Linux 没有该机制，强杀 DSH 可能留下孤儿 daemon，下次启动会复用。
+- `windowsHide` 在非 Windows 平台被忽略。
+
+保持这个性质：除非某平台确实行为不同，不要引入 `process.platform` 分支，也不要拼接平台特定的 shell 命令。
 
 ## 开发流程
 
@@ -81,10 +104,19 @@ bsk status --json
 
 ## 发布
 
-1. 修改 `package.json` 中的 `version`。
-2. 行为或配置有变化时同步更新 `README.md` / `README.zh.md`。
-3. 运行 `node --test test/`。
-4. 提交后打 tag `v<version>` 并推送。
+`.github/workflows/publish.yml` 在 `v*` 标签上发布：先测试，再用仓库的 `GITHUB_TOKEN`（`packages: write`）把 `@xfy9326/dsh-bsk-daemon` 发布到 GitHub Packages，打包 tarball 并创建 GitHub Release。
+
+1. 修改 `package.json` 的 `version`（工作流只发布这个版本；重复发布同版本会失败）。
+2. 行为、配置或支持版本有变化时同步更新 `README.md` / `README.zh.md` / `AGENTS`。
+3. 本地运行 `node --test test/` 与 `npm pack --dry-run`。
+4. 提交、打 tag `v<version>`，推送提交与标签。
+5. 用 `gh run list --workflow publish.yml` 确认；检查包页面与 Release 资产。流水线未变绿前不要宣布成功。
+
+仓库设置保持最小：Actions 只用默认 token，不存任何 secret。
+
+## 支持版本
+
+`package.json` 不把 DSH 声明为依赖——由 DSH 加载 bundle。测试新的 DSH/Cordis/bsk 版本后，同步更新两个 README 的兼容性表：当前记录为 DSH `0.2.1-rc.2`、Cordis `4.0.5`、bsk `0.3.3`、Node `>=22`。
 
 ## 许可证
 

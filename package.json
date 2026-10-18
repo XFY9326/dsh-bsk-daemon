@@ -1,9 +1,8 @@
 {
-  "name": "dsh-bsk-daemon",
+  "name": "@xfy9326/dsh-bsk-daemon",
   "version": "1.0.0",
-  "private": true,
   "type": "module",
-  "description": "DSH bundle that supervises the BrowserSkill (bsk) bridge daemon as a host child process: start with DSH, stop with DSH, bounded crash restarts.",
+  "description": "DSH bundle that supervises the BrowserSkill (bsk) bridge daemon as a host child process: start with DSH, stop with DSH, bounded crash restarts. Windows, macOS and Linux.",
   "keywords": [
     "dsh",
     "deepseek-harness",
@@ -13,7 +12,10 @@
     "bsk",
     "daemon",
     "browser-automation",
-    "windows"
+    "windows",
+    "macos",
+    "linux",
+    "cross-platform"
   ],
   "license": "MIT",
   "author": "XFY9326",
@@ -25,6 +27,9 @@
   "bugs": {
     "url": "https://github.com/XFY9326/dsh-bsk-daemon/issues"
   },
+  "engines": {
+    "node": ">=22"
+  },
   "exports": {
     ".": "./index.js",
     "./locale/*.json": "./locale/*.json",
@@ -32,7 +37,12 @@
   },
   "files": ["index.js", "cordis.patch.yml", "locale/*.json", "icon.svg"],
   "scripts": {
-    "test": "node --test test/"
+    "test": "node --test test/",
+    "prepublishOnly": "node --test test/"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
   },
   "dsh": {
     "bundle": { "patch": "./cordis.patch.yml" }

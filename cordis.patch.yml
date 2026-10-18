@@ -14,7 +14,7 @@
 # so restate every field you need.
 - insert:
     - id: bsk-daemon
-      name: 'dsh-bsk-daemon'
+      name: '@xfy9326/dsh-bsk-daemon'
       # config:
       #   bskPath: 'C:\Users\me\.local\bin\bsk.exe'
       #   bskHome: 'C:\Users\me\.bsk'
